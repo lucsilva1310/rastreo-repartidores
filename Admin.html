@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style> body { margin: 0; padding: 0; } #map { position: absolute; top: 0; bottom: 0; width: 100%; } </style>
+</head>
+<body>
+    <div id='map'></div>
+
+    <script>
+        // 1. CONFIGURACIÓN
+        mapboxgl.accessToken = 'sk.eyJ1IjoibHVjc2lsdmExMzEwIiwiYSI6ImNtbGlzaHJoZjA2c2czZ29wN3ZzcHpmMTEifQ.LI_lJ3cjVuAyUAyQxWC0Aw'; // El que obtuviste gratis
+        const supabaseUrl = 'https://bimhfmxsikxyeaukfvbe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbWhmbXhzaWt4eWVhdWtmdmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1ODA2MTMsImV4cCI6MjA4NjE1NjYxM30.Q4Hydin8FSNIPd02Cl3e7RUSX6a_aEwJHBuh-Jwhmtg';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Inicializar mapa
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-66.903, 10.480], // Coordenadas iniciales (ej. Caracas)
+            zoom: 12
+        });
+
+        // Diccionario para guardar los marcadores en pantalla
+        const marcadores = {};
+
+        // 2. ESCUCHAR CAMBIOS EN TIEMPO REAL
+        supabase
+            .channel('repartidores-tracker')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'repartidores' }, (payload) => {
+                const data = payload.new;
+                
+                // Si el marcador ya existe, muévelo
+                if (marcadores[data.id]) {
+                    marcadores[data.id].setLngLat([data.lng, data.lat]);
+                } else {
+                    // Si es nuevo, créalo
+                    const el = document.createElement('div');
+                    el.style.backgroundColor = 'red';
+                    el.style.width = '20px';
+                    el.style.height = '20px';
+                    el.style.borderRadius = '50%';
+                    
+                    marcadores[data.id] = new mapboxgl.Marker(el)
+                        .setLngLat([data.lng, data.lat])
+                        .addTo(map);
+                }
+            })
+            .subscribe();
+    </script>
+</body>
+</html>

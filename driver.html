@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Modo Repartidor: ACTIVO</h1>
+    <p id="status">Esperando GPS...</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        // 1. TUS CREDENCIALES DE SUPABASE (Sácalas de Project Settings > API)
+        const supabaseUrl = 'https://bimhfmxsikxyeaukfvbe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbWhmbXhzaWt4eWVhdWtmdmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1ODA2MTMsImV4cCI6MjA4NjE1NjYxM30.Q4Hydin8FSNIPd02Cl3e7RUSX6a_aEwJHBuh-Jwhmtg';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // ID DEL REPARTIDOR (Esto podrías cambiarlo dinámicamente)
+        const mi_id = 1; 
+
+        // 2. FUNCIÓN PARA ACTUALIZAR UBICACIÓN
+        async function actualizarUbicacion(lat, lng) {
+            const { error } = await supabase
+                .from('repartidores')
+                .update({ lat: lat, lng: lng, updated_at: new Date() })
+                .eq('id', mi_id);
+
+            if (error) console.error('Error enviando:', error);
+            else document.getElementById('status').innerText = `Enviado: ${lat}, ${lng}`;
+        }
+
+        // 3. ACTIVAR GPS DEL CELULAR (watchPosition detecta movimiento)
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((position) => {
+                actualizarUbicacion(position.coords.latitude, position.coords.longitude);
+            }, (error) => {
+                console.error("Error GPS", error);
+            }, {
+                enableHighAccuracy: true, // Máxima precisión
+                timeout: 5000,
+                maximumAge: 0
+            });
+        } else {
+            alert("Tu navegador no soporta geolocalización.");
+        }
+    </script>
+</body>
+</html>
