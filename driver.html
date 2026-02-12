@@ -1,39 +1,56 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    const supabaseUrl = 'https://bimhfmxsikxyeaukfvbe.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbWhmbXhzaWt4eWVhdWtmdmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1ODA2MTMsImV4cCI6MjA4NjE1NjYxM30.Q4Hydin8FSNIPd02Cl3e7RUSX6a_aEwJHBuh-Jwhmtg';
-    
-    // CORRECCIÓN: Cambiado el nombre de la variable a 'supabaseClient'
-    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-    
-    const mi_id = 1; 
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Driver Tracker</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #status { font-weight: bold; color: blue; }
+        .data { font-size: 0.8em; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🛰️ Rastreador Activo</h1>
+    <p id="status">Iniciando GPS...</p>
+    <div id="coordenadas" class="data">Esperando datos...</div>
 
-    async function actualizarUbicacion(lat, lng) {
-        const { error } = await supabaseClient // Usar el nombre corregido
-            .from('repartidores')
-            .update({ lat: lat, lng: lng, updated_at: new Date() })
-            .eq('id', mi_id);
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://bimhfmxsikxyeaukfvbe.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbWhmbXhzaWt4eWVhdWtmdmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1ODA2MTMsImV4cCI6MjA4NjE1NjYxM30.Q4Hydin8FSNIPd02Cl3e7RUSX6a_aEwJHBuh-Jwhmtg';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        const mi_id = 1; 
 
-        if (error) {
-            console.error('Error Supabase:', error.message);
-            document.getElementById('status').innerText = "Error de conexión";
-        } else {
-            document.getElementById('status').innerText = `Enviado: ${lat}, ${lng}`;
+        async function enviarUbicacion(lat, lng) {
+            const { error } = await supabaseClient
+                .from('repartidores')
+                .update({ lat: lat, lng: lng, updated_at: new Date() })
+                .eq('id', mi_id);
+
+            if (error) {
+                document.getElementById('status').innerText = "❌ Error de Red";
+                console.error(error);
+            } else {
+                document.getElementById('status').innerText = "✅ Ubicación Sincronizada";
+                document.getElementById('coordenadas').innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+            }
         }
-    }
 
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition((position) => {
-            actualizarUbicacion(position.coords.latitude, position.coords.longitude);
-        }, (error) => {
-            console.error("Error GPS:", error.message);
-            document.getElementById('status').innerText = "Error GPS: " + error.message;
-        }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        });
-    } else {
-        alert("Navegador no compatible");
-    }
-</script>
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    enviarUbicacion(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    document.getElementById('status').innerText = "⚠️ Error: " + err.message;
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        } else {
+            document.getElementById('status').innerText = "🚫 GPS no soportado";
+        }
+    </script>
+</body>
+</html>
