@@ -1,48 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <title>Panel de Control - Mapa</title>
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <style> body { margin: 0; padding: 0; } #map { position: absolute; top: 0; bottom: 0; width: 100%; } </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; background-color: #e5e5e5; }
+    </style>
 </head>
 <body>
     <div id='map'></div>
 
     <script>
-        // 1. CONFIGURACIÓN
-        mapboxgl.accessToken = 'pk.eyJ1IjoibHVjc2lsdmExMzEwIiwiYSI6ImNtbGlyNW9lODA2Y3gzZm9wazBnemNiMGIifQ.cuc584I8qpAKDU9-KUaYWw'; // El que obtuviste gratis
+        // 1. CONFIGURACIÓN (Usa el token que empieza por pk.)
+        mapboxgl.accessToken = 'pk.eyJ1IjoibHVjc2lsdmExMzEwIiwiYSI6ImNtbGlyNW9lODA2Y3gzZm9wazBnemNiMGIifQ.cuc584I8qpAKDU9-KUaYWw'; 
         const supabaseUrl = 'https://bimhfmxsikxyeaukfvbe.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbWhmbXhzaWt4eWVhdWtmdmJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1ODA2MTMsImV4cCI6MjA4NjE1NjYxM30.Q4Hydin8FSNIPd02Cl3e7RUSX6a_aEwJHBuh-Jwhmtg';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Inicializar mapa
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [-66.903, 10.480], // Coordenadas iniciales (ej. Caracas)
+            center: [-66.903, 10.480], 
             zoom: 12
         });
 
-        // Diccionario para guardar los marcadores en pantalla
         const marcadores = {};
 
-        // 2. ESCUCHAR CAMBIOS EN TIEMPO REAL
-        supabase
+        // Escuchar cambios
+        supabaseClient
             .channel('repartidores-tracker')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'repartidores' }, (payload) => {
                 const data = payload.new;
-                
-                // Si el marcador ya existe, muévelo
                 if (marcadores[data.id]) {
                     marcadores[data.id].setLngLat([data.lng, data.lat]);
                 } else {
-                    // Si es nuevo, créalo
                     const el = document.createElement('div');
-                    el.style.backgroundColor = 'red';
-                    el.style.width = '20px';
-                    el.style.height = '20px';
-                    el.style.borderRadius = '50%';
+                    el.style.width = '20px'; el.style.height = '20px';
+                    el.style.backgroundColor = 'red'; el.style.borderRadius = '50%';
+                    el.style.border = '2px solid white';
                     
                     marcadores[data.id] = new mapboxgl.Marker(el)
                         .setLngLat([data.lng, data.lat])
@@ -52,5 +52,4 @@
             .subscribe();
     </script>
 </body>
-
 </html>
